@@ -146,7 +146,7 @@ def add_url_to_done_list(url, subcategory_url_done_list):
 if __name__ == "__main__":
     driver = webdriver.Chrome()
 
-    sub_category = "women-manteau-hijab"
+    sub_category = "women-coat-jacket"
     category = "fashion"
     sequence = "04"
 
