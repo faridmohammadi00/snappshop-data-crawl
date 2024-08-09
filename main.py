@@ -8,7 +8,6 @@ from selenium.common.exceptions import NoSuchElementException
 
 
 def create_dir_csv(category_dir, subcategory_dir):
-
     if os.path.isdir(category_dir) is not True:
         print('Creating category directory...')
         os.mkdir(category_dir)
@@ -53,7 +52,8 @@ def get_main_feature(driver):
         main_feature_spans = main_feature_div.find_elements(By.TAG_NAME, "span")
     except NoSuchElementException:
         try:
-            main_feature_div = driver.find_element(By.XPATH, "//div[@class='d-flex justify-content-between text-gray-800 body-2']")
+            main_feature_div = driver.find_element(By.XPATH,
+                                                   "//div[@class='d-flex justify-content-between text-gray-800 body-2']")
             main_feature_spans = main_feature_div.find_elements(By.TAG_NAME, "span")
         except NoSuchElementException:
             main_feature_spans = []
@@ -77,7 +77,8 @@ def fix_image_url(url):
 
 
 def get_product_images(driver, save_path):
-    images_divs_list = driver.find_elements(By.XPATH, "//div[@class='keen-slider__slide gallery_gallery__thumbnail-slide__gMe2B']")
+    images_divs_list = driver.find_elements(By.XPATH,
+                                            "//div[@class='keen-slider__slide gallery_gallery__thumbnail-slide__gMe2B']")
     images_list = []
     for image_div in images_divs_list:
         image = image_div.find_element(By.TAG_NAME, "img")
@@ -86,6 +87,7 @@ def get_product_images(driver, save_path):
 
     print("Downloading Product Images...")
     image_names_list = []
+    error_count = 0
     for i in range(len(images_list)):
         print("Downloading  ", images_list[i])
         url_parse = urlparse(images_list[i])
@@ -93,20 +95,25 @@ def get_product_images(driver, save_path):
         clear_img_name = url_split[len(url_split) - 1]
         image_names_list.append(clear_img_name)
         img_url_fixed = fix_image_url(images_list[i])
-        urlretrieve(img_url_fixed, save_path + "/" + clear_img_name)
+        try:
+            urlretrieve(img_url_fixed, save_path + "/" + clear_img_name)
+        except Exception as e:
+            error_count += 1
 
-    return images_list, image_names_list
+    return images_list, image_names_list, error_count
 
 
 def get_product_name(driver):
-    name_element = driver.find_element(By.XPATH, "//h1[@class='text-gray-900 body-1 text-bold text-iransans-en-digits']")
+    name_element = driver.find_element(By.XPATH,
+                                       "//h1[@class='text-gray-900 body-1 text-bold text-iransans-en-digits']")
     name_text = name_element.text.strip()
     return name_text
 
 
 def get_product_features(driver):
     keys = driver.find_elements(By.XPATH, "//ul[@class='pt-m']//span[@class='caption d-inline-block']")
-    values = driver.find_elements(By.XPATH, "//ul[@class='pt-m']//span[@class='pr-xxs caption text-gray-800 text-bold']")
+    values = driver.find_elements(By.XPATH,
+                                  "//ul[@class='pt-m']//span[@class='pr-xxs caption text-gray-800 text-bold']")
 
     feature_key = []
     feature_value = []
@@ -146,7 +153,7 @@ def add_url_to_done_list(url, subcategory_url_done_list):
 if __name__ == "__main__":
     driver = webdriver.Chrome()
 
-    sub_category = "women-coat-jacket"
+    sub_category = "women-nightdress"
     category = "fashion"
     sequence = "04"
 
@@ -187,8 +194,13 @@ if __name__ == "__main__":
                         print("Product is Not Available.")
                         continue
                     print("Price: ", price)
-                    img_url_list, img_name_list = get_product_images(driver, subcategory_dir)
+                    img_url_list, img_name_list, errors = get_product_images(driver, subcategory_dir)
                     print("Images: ", img_name_list)
+                    if len(img_url_list) == errors:
+                        add_url_to_done_list(clear_link, cat_pro_url_done_list)
+                        print("Finished crawling.")
+                        print("Product's Images are Not Available.")
+                        continue
                     main_feature = get_main_feature(driver)
                     print("Main feature: ", main_feature)
 
